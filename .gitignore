@@ -1,0 +1,15 @@
+build/
+build-*/
+out/
+dist/
+node_modules/
+*.node
+compile_commands.json
+.DS_Store
+.vscode/
+.vscode-test/
+*.log
+.env
+.env.*
+!.env.example
+*.vsix

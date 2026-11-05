@@ -1,0 +1,118 @@
+{
+  "name": "rangeedit-vscode",
+  "displayName": "RangeEdit",
+  "description": "Range-based scan, replace, and delete powered by the RangeEdit engine.",
+  "publisher": "rangeedit",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.105.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/src/extension.js",
+  "activationEvents": [
+    "onCommand:rangeedit.scan",
+    "onCommand:rangeedit.replace",
+    "onCommand:rangeedit.delete"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "rangeedit.scan",
+        "title": "RangeEdit: Scan"
+      },
+      {
+        "command": "rangeedit.replace",
+        "title": "RangeEdit: Replace"
+      },
+      {
+        "command": "rangeedit.delete",
+        "title": "RangeEdit: Delete"
+      }
+    ],
+    "configuration": {
+      "title": "RangeEdit",
+      "properties": {
+        "rangeedit.nativeMode": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "always",
+            "never"
+          ],
+          "default": "auto",
+          "description": "When to use the native addon. Auto uses the TypeScript literal path and requires the addon for regex."
+        },
+        "rangeedit.addonPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to rangeedit.node. Leave empty to search the workspace and repository build directories."
+        },
+        "rangeedit.algorithm": {
+          "type": "string",
+          "enum": [
+            "naive",
+            "bmh",
+            "kmp",
+            "std"
+          ],
+          "default": "bmh",
+          "description": "Literal matching algorithm used by the native addon."
+        },
+        "rangeedit.maxMatches": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "description": "Maximum matches per operation. Zero means unlimited."
+        },
+        "rangeedit.defaultRegex": {
+          "type": "boolean",
+          "default": false,
+          "description": "Start the options picker with regex enabled."
+        },
+        "rangeedit.defaultCaseSensitive": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start the options picker with case-sensitive matching enabled."
+        },
+        "rangeedit.defaultWholeWord": {
+          "type": "boolean",
+          "default": false,
+          "description": "Start the options picker with whole-word matching enabled."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('out',{recursive:true,force:true})\"",
+    "compile": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "vscode:prepublish": "npm run clean && npm run compile",
+    "pretest:unit": "npm run compile",
+    "test:unit": "node --test out/test/unit",
+    "pretest:integration": "npm run compile",
+    "test:integration": "node out/test/integration/runTest.js",
+    "test": "npm run test:unit",
+    "package:vsix": "node scripts/package-vsix.mjs"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^24.19.2",
+    "@types/vscode": "^1.105.0",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^4.1.0",
+    "mocha": "^11.7.5",
+    "typescript": "^5.9.3"
+  },
+  "license": "MIT",
+  "icon": "icon.png",
+  "keywords": [
+    "replace",
+    "search",
+    "regex",
+    "text",
+    "range",
+    "delete"
+  ]
+}
