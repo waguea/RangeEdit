@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { findAddonPath, loadAddon, scanWithAddon, type AddonModule } from "./addon";
 import { scanLiteral } from "./fallback";
 import { planEdits } from "./plan";
+import { validateLineRange } from "./range";
 import type {
     Algorithm,
     CommandArgs,
@@ -135,9 +136,115 @@ async function resolveReplacement(args: CommandArgs): Promise<string | undefined
     });
 }
 
+function resolveLineTarget(
+    document: vscode.TextDocument,
+    startLine: number,
+    endLine: number,
+): TargetRange {
+    const error = validateLineRange(document.lineCount, startLine, endLine);
+    if (error !== undefined) {
+        throw new Error(error);
+    }
+    const range = new vscode.Range(
+        document.lineAt(startLine - 1).range.start,
+        document.lineAt(endLine - 1).range.end,
+    );
+    return {
+        text: document.getText(range),
+        offset: document.offsetAt(range.start),
+    };
+}
+
+async function promptLine(
+    title: string,
+    prompt: string,
+    defaultValue: number,
+    minimum: number,
+    maximum: number,
+): Promise<number | undefined> {
+    const value = await vscode.window.showInputBox({
+        title,
+        prompt,
+        value: String(defaultValue),
+        ignoreFocusOut: true,
+        validateInput: (input) => {
+            const parsed = Number(input.trim());
+            if (!Number.isSafeInteger(parsed)) {
+                return "Enter a whole number.";
+            }
+            if (parsed < minimum || parsed > maximum) {
+                return `Enter a number between ${minimum} and ${maximum}.`;
+            }
+            return undefined;
+        },
+    });
+    return value === undefined ? undefined : Number(value.trim());
+}
+
+async function resolveLineArguments(
+    editor: vscode.TextEditor,
+    args: CommandArgs,
+): Promise<CommandArgs | undefined> {
+    const document = editor.document;
+    const startLine = args.startLine;
+    const endLine = args.endLine;
+
+    if (startLine !== undefined || endLine !== undefined) {
+        if (startLine === undefined || endLine === undefined) {
+            throw new Error("startLine and endLine must be provided together");
+        }
+        const error = validateLineRange(document.lineCount, startLine, endLine);
+        if (error !== undefined) {
+            throw new Error(error);
+        }
+        return { ...args, scope: "lines", startLine, endLine };
+    }
+
+    const selection = editor.selection;
+    const defaultStart = selection.isEmpty
+        ? selection.active.line + 1
+        : selection.start.line + 1;
+    const defaultEnd = selection.isEmpty ? defaultStart : selection.end.line + 1;
+
+    const start = await promptLine(
+        "RangeEdit start line",
+        `Start line (1-${document.lineCount})`,
+        defaultStart,
+        1,
+        document.lineCount,
+    );
+    if (start === undefined) {
+        return undefined;
+    }
+
+    const end = await promptLine(
+        "RangeEdit end line",
+        `End line (${start}-${document.lineCount})`,
+        Math.max(defaultEnd, start),
+        start,
+        document.lineCount,
+    );
+    if (end === undefined) {
+        return undefined;
+    }
+
+    return { ...args, scope: "lines", startLine: start, endLine: end };
+}
+
 function resolveTarget(editor: vscode.TextEditor, args: CommandArgs): TargetRange {
     const document = editor.document;
     const selection = editor.selection;
+    if (
+        args.scope === "lines" ||
+        (args.scope === undefined &&
+            args.startLine !== undefined &&
+            args.endLine !== undefined)
+    ) {
+        if (args.startLine === undefined || args.endLine === undefined) {
+            throw new Error("startLine and endLine must be provided together");
+        }
+        return resolveLineTarget(document, args.startLine, args.endLine);
+    }
     const useSelection =
         args.scope === "selection" || (args.scope === undefined && !selection.isEmpty);
     const range = useSelection
@@ -274,6 +381,7 @@ function writeMatches(
 async function runScan(
     context: vscode.ExtensionContext,
     args: CommandArgs,
+    lineMode = false,
 ): Promise<ScanSummary | undefined> {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -293,7 +401,12 @@ async function runScan(
         return undefined;
     }
 
-    const target = resolveTarget(editor, args);
+    const targetArgs = lineMode ? await resolveLineArguments(editor, args) : args;
+    if (targetArgs === undefined) {
+        return undefined;
+    }
+
+    const target = resolveTarget(editor, targetArgs);
     const result = await vscode.window.withProgress(
         {
             location: vscode.ProgressLocation.Notification,
@@ -331,6 +444,7 @@ async function runEdit(
     context: vscode.ExtensionContext,
     args: CommandArgs,
     deleteMode: boolean,
+    lineMode = false,
 ): Promise<EditSummary | undefined> {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -353,7 +467,12 @@ async function runEdit(
     if (!options) {
         return undefined;
     }
-    const target = resolveTarget(editor, args);
+    const targetArgs = lineMode ? await resolveLineArguments(editor, args) : args;
+    if (targetArgs === undefined) {
+        return undefined;
+    }
+
+    const target = resolveTarget(editor, targetArgs);
     const result = await vscode.window.withProgress(
         {
             location: vscode.ProgressLocation.Notification,
@@ -447,6 +566,15 @@ export function registerCommands(context: vscode.ExtensionContext): void {
         ),
         vscode.commands.registerCommand("rangeedit.delete", (args: CommandArgs = {}) =>
             guarded(() => runEdit(context, args, true)),
+        ),
+        vscode.commands.registerCommand("rangeedit.scanLines", (args: CommandArgs = {}) =>
+            guarded(() => runScan(context, args, true)),
+        ),
+        vscode.commands.registerCommand("rangeedit.replaceLines", (args: CommandArgs = {}) =>
+            guarded(() => runEdit(context, args, false, true)),
+        ),
+        vscode.commands.registerCommand("rangeedit.deleteLines", (args: CommandArgs = {}) =>
+            guarded(() => runEdit(context, args, true, true)),
         ),
     );
 }

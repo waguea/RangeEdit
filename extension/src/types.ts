@@ -48,7 +48,9 @@ export interface CommandArgs {
     algorithm?: Algorithm;
     apply?: boolean;
     silent?: boolean;
-    scope?: "document" | "selection";
+    scope?: "document" | "selection" | "lines";
+    startLine?: number;
+    endLine?: number;
 }
 
 export interface ScanSummary {

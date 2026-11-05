@@ -7,3 +7,4 @@
 - Added VS Code progress, cancellation, output-channel results, and edit-statistics preview.
 - Added TypeScript literal fallback and bundled native addon for regex and native mode.
 - Added per-match `WorkspaceEdit` application for native undo/redo.
+- Added scan, replace, and delete commands restricted to an explicit 1-based line range.

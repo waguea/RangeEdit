@@ -14,7 +14,10 @@
   "activationEvents": [
     "onCommand:rangeedit.scan",
     "onCommand:rangeedit.replace",
-    "onCommand:rangeedit.delete"
+    "onCommand:rangeedit.delete",
+    "onCommand:rangeedit.scanLines",
+    "onCommand:rangeedit.replaceLines",
+    "onCommand:rangeedit.deleteLines"
   ],
   "contributes": {
     "commands": [
@@ -29,6 +32,18 @@
       {
         "command": "rangeedit.delete",
         "title": "RangeEdit: Delete"
+      },
+      {
+        "command": "rangeedit.scanLines",
+        "title": "RangeEdit: Scan in Line Range"
+      },
+      {
+        "command": "rangeedit.replaceLines",
+        "title": "RangeEdit: Replace in Line Range"
+      },
+      {
+        "command": "rangeedit.deleteLines",
+        "title": "RangeEdit: Delete in Line Range"
       }
     ],
     "configuration": {
@@ -90,7 +105,7 @@
     "watch": "tsc -w -p .",
     "vscode:prepublish": "npm run clean && npm run compile",
     "pretest:unit": "npm run compile",
-    "test:unit": "node --test out/test/unit",
+    "test:unit": "node --test out/test/unit/*.test.js",
     "pretest:integration": "npm run compile",
     "test:integration": "node out/test/integration/runTest.js",
     "test": "npm run test:unit",

@@ -13,9 +13,13 @@ in normal undo/redo, and cancelled scans never modify the document.
 | `RangeEdit: Scan` | Find matches and list their offsets in the RangeEdit output channel. |
 | `RangeEdit: Replace` | Find matches, preview edit statistics, then replace them. |
 | `RangeEdit: Delete` | Find matches, preview edit statistics, then delete them. |
+| `RangeEdit: Scan in Line Range` | Same as Scan, restricted to a 1-based inclusive line range. |
+| `RangeEdit: Replace in Line Range` | Same as Replace, restricted to a 1-based inclusive line range. |
+| `RangeEdit: Delete in Line Range` | Same as Delete, restricted to a 1-based inclusive line range. |
 
 If text is selected, the operation is limited to that selection. Otherwise it runs on the whole
-active document.
+active document. The line-range commands always ask for a start line and an end line; both are
+1-based, and the end line's text is included without its trailing newline.
 
 The options picker controls regex, case sensitivity, and whole-word matching. Regex uses the
 bundled RE2-based native engine. Regex backreferences and lookaround are not supported.

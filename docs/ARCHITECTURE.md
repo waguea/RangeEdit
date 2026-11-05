@@ -129,6 +129,10 @@ many small searches.
 - `rangeedit.replace` and `rangeedit.delete` scan first, show edit statistics, then apply through
   `WorkspaceEdit`.
 - A non-empty selection scopes the operation to that range; otherwise the whole document is used.
+- `rangeedit.scanLines`, `rangeedit.replaceLines`, and `rangeedit.deleteLines` prompt for a
+  1-based inclusive start and end line and operate only on that range.
+- Line ranges are implemented by slicing the document text and translating match offsets back,
+  so the engine and addon keep their full-text API.
 - `rangeedit.nativeMode=auto` uses the TypeScript literal fallback and the addon for regex.
   `always` forces the addon; `never` disables it.
 - The addon path comes from `RANGEEDIT_ADDON`, `rangeedit.addonPath`, or discovery of

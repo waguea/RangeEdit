@@ -182,9 +182,13 @@ The commands are:
 - `RangeEdit: Scan` — show match positions in the RangeEdit output channel.
 - `RangeEdit: Replace` — preview edit statistics, then apply through `WorkspaceEdit`.
 - `RangeEdit: Delete` — delete matches after the same preview.
+- `RangeEdit: Scan in Line Range` — scan a 1-based inclusive line range.
+- `RangeEdit: Replace in Line Range` — replace within a 1-based inclusive line range.
+- `RangeEdit: Delete in Line Range` — delete within a 1-based inclusive line range.
 
 With a non-empty selection the commands operate on the selection; otherwise they operate on the
-whole document. `rangeedit.nativeMode` controls native use: `auto` uses the TypeScript fallback
+whole document. The line-range commands prompt for start and end lines and include the end line's
+text without its trailing newline. `rangeedit.nativeMode` controls native use: `auto` uses the TypeScript fallback
 for literal matching and the addon for regex, `always` forces the addon, and `never` disables it.
 `rangeedit.algorithm` and `rangeedit.maxMatches` tune the native path.
 
