@@ -2,7 +2,7 @@
   "name": "rangeedit-vscode",
   "displayName": "RangeEdit",
   "description": "Range-based scan, replace, and delete powered by the RangeEdit engine.",
-  "publisher": "rangeedit",
+  "publisher": "waguea",
   "version": "0.1.0",
   "engines": {
     "vscode": "^1.105.0"
