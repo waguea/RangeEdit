@@ -124,7 +124,7 @@ endif()
 
 string(REPEAT "a" 65534 large_prefix)
 set(large_file "${CLI_TEST_DIR}/large.txt")
-file(WRITE "${large_file}" "${large_prefix}\nneedle end\n")
+file(CONFIGURE OUTPUT "${large_file}" CONTENT "${large_prefix}\nneedle end\n" NEWLINE_STYLE LF)
 check_cli(
     "scan across chunk boundary"
     0
@@ -133,7 +133,10 @@ check_cli(
 
 string(REPEAT "a" 65533 whole_word_prefix)
 set(whole_word_large "${CLI_TEST_DIR}/whole_word_large.txt")
-file(WRITE "${whole_word_large}" "${whole_word_prefix} cat scatter cat\n")
+file(CONFIGURE
+    OUTPUT "${whole_word_large}"
+    CONTENT "${whole_word_prefix} cat scatter cat\n"
+    NEWLINE_STYLE LF)
 check_cli(
     "scan whole word across chunk boundary"
     0
