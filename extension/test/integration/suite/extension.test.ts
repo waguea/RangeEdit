@@ -2,6 +2,23 @@ import { deepStrictEqual, ok, strictEqual } from "node:assert";
 import * as vscode from "vscode";
 import type { EditSummary, ScanSummary } from "../../../src/types";
 
+async function waitForExtension(
+    name: string,
+    timeoutMs = 10000,
+): Promise<vscode.Extension<unknown> | undefined> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() <= deadline) {
+        const extension = vscode.extensions.all.find(
+            (item) => item.packageJSON.name === name,
+        );
+        if (extension !== undefined) {
+            return extension;
+        }
+        await new Promise((resolveWait) => setTimeout(resolveWait, 100));
+    }
+    return undefined;
+}
+
 async function openDocument(content: string): Promise<vscode.TextDocument> {
     const document = await vscode.workspace.openTextDocument({
         content,
@@ -75,8 +92,13 @@ async function executeEditLines(
 
 suite("RangeEdit extension", () => {
     test("activates and registers commands", async () => {
-        const extension = vscode.extensions.getExtension("rangeedit.rangeedit-vscode");
-        ok(extension, "extension is loaded");
+        const extension = await waitForExtension("rangeedit-vscode");
+        ok(
+            extension,
+            `extension is loaded; available: ${vscode.extensions.all
+                .map((item) => item.id)
+                .join(", ")}`,
+        );
         await extension.activate();
 
         const commands = await vscode.commands.getCommands(true);
@@ -226,6 +248,84 @@ suite("RangeEdit extension", () => {
         await executeEditLines("rangeedit.replaceLines", "needle", "X", 2, 2);
 
         strictEqual(document.getText(), "needle\nX\nneedle");
+    });
+
+    test("handles an empty search pattern", async () => {
+        const document = await openDocument("needle needle");
+        const scan = await executeScan("");
+        strictEqual(scan.matches.length, 0);
+
+        const result = await executeEdit("rangeedit.replace", "", "X");
+        strictEqual(result.applied, false);
+        strictEqual(result.plan.editCount, 0);
+        strictEqual(document.getText(), "needle needle");
+    });
+
+    test("handles no matches without editing", async () => {
+        const document = await openDocument("alpha beta");
+        const result = await executeEdit("rangeedit.replace", "needle", "X");
+
+        strictEqual(result.applied, false);
+        strictEqual(result.plan.editCount, 0);
+        strictEqual(document.getText(), "alpha beta");
+    });
+
+    test("does not edit when a line range has no matches", async () => {
+        const document = await openDocument("needle\nnothing\nneedle");
+        const result = await executeEditLines(
+            "rangeedit.replaceLines",
+            "needle",
+            "X",
+            2,
+            2,
+        );
+
+        strictEqual(result.applied, false);
+        strictEqual(result.plan.editCount, 0);
+        strictEqual(document.getText(), "needle\nnothing\nneedle");
+    });
+
+    test("edits the first line only", async () => {
+        const document = await openDocument("needle\nneedle\nneedle");
+        const result = await executeEditLines(
+            "rangeedit.replaceLines",
+            "needle",
+            "X",
+            1,
+            1,
+        );
+
+        strictEqual(result.applied, true);
+        strictEqual(document.getText(), "X\nneedle\nneedle");
+    });
+
+    test("edits the last line only", async () => {
+        const document = await openDocument("needle\nneedle\nneedle");
+        const result = await executeEditLines(
+            "rangeedit.replaceLines",
+            "needle",
+            "X",
+            3,
+            3,
+        );
+
+        strictEqual(result.applied, true);
+        strictEqual(document.getText(), "needle\nneedle\nX");
+    });
+
+    test("replaces multiple occurrences per line within a range", async () => {
+        const document = await openDocument("needle needle\nneedle needle\nneedle");
+        const result = await executeEditLines(
+            "rangeedit.replaceLines",
+            "needle",
+            "X",
+            1,
+            2,
+        );
+
+        strictEqual(result.applied, true);
+        strictEqual(result.plan.editCount, 4);
+        strictEqual(document.getText(), "X X\nX X\nneedle");
     });
 
     test("uses RE2 for line-range replacements", async () => {
