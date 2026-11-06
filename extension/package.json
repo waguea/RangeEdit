@@ -129,5 +129,13 @@
     "text",
     "range",
     "delete"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/waguea/RangeEdit.git"
+  },
+  "homepage": "https://github.com/waguea/RangeEdit#readme",
+  "bugs": {
+    "url": "https://github.com/waguea/RangeEdit/issues"
+  }
 }
